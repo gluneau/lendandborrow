@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "deploy": "yarn hardhat run scripts/deploy.js --network linea_testnet",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
@@ -10,7 +11,16 @@
   },
   "dependencies": {
     "@metamask/sdk": "^0.10.0",
+    "@moralisweb3/common-evm-utils": "^2.23.1",
+    "assert": "^2.1.0",
     "core-js": "^3.8.3",
+    "crypto-browserify": "^3.12.0",
+    "dotenv": "^16.3.1",
+    "moralis": "^2.23.1",
+    "os-browserify": "^0.3.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "stream-browserify": "^3.0.0",
     "vue": "^3.2.13"
   },
   "devDependencies": {

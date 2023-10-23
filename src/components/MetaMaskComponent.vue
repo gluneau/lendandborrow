@@ -1,9 +1,11 @@
 <template>
   <div class="metamask-container">
     <button class="action-button" @click="onConnect">CONNECT</button>
+    <button class="action-button" @click="getNFT">GET NFTs</button>
+    <button class="action-button" @click="getTokens">GET TOKENS</button>
     <button class="action-button" @click="onSign">SIGN</button>
     <button class="action-button" @click="addEthereumChain">
-      ADD POLYGON CHAIN
+      ADD LINEA TESTNET CHAIN
     </button>
     <button class="action-button" @click="terminate">TERMINATE</button>
     <div class="spacer">
@@ -23,12 +25,37 @@
     <div class="spacer">
       Last response: {{lastResponse}}
     </div>
+    <div v-if="nfts">NFTs:
+      <ul>
+        <li 
+            v-for="nft in nfts.jsonResponse.result" 
+            :key="nft.token_address" 
+        >
+            {{ nft.name }} ({{ nft.contract_type }}) ID:{{ nft.token_id }}
+        </li>
+      </ul>
+    </div>
+    <div v-if="tokens">Tokens:
+      <ul>
+        <li
+            v-for="token in tokens.jsonResponse" 
+            :key="token.token_address" 
+        >
+            {{ token.name }} ({{ token.symbol }}) {{ formattedBalance(token.balance) }}
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
 import { MetaMaskSDK } from '@metamask/sdk';
 const { Buffer } = require('buffer');
+const Moralis = require("moralis").default;
+const { EvmChain } = require("@moralisweb3/common-evm-utils");
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export default {
   name: 'MetaMaskComponent',
@@ -39,6 +66,8 @@ export default {
       chainId: null,
       connected: false,
       lastResponse: null,
+      nfts: null,
+      tokens: null
     };
   },
   created() {
@@ -108,6 +137,11 @@ export default {
         console.log('request accounts', res);
         this.lastResponse = "";
         this.chainId = window.ethereum.chainId;
+
+        await Moralis.start({
+          apiKey: process.env.VUE_APP_MORALIS_API_KEY,
+        });
+
       } catch (e) {
         console.log('request accounts ERR', e);
       }
@@ -118,11 +152,11 @@ export default {
           method: 'wallet_addEthereumChain',
           params: [
             {
-              chainId: '0x89',
-              chainName: 'Polygon',
-              blockExplorerUrls: ['https://polygonscan.com'],
-              nativeCurrency: { symbol: 'MATIC', decimals: 18 },
-              rpcUrls: ['https://polygon-rpc.com/'],
+              chainId: '0xe704',
+              chainName: 'Linea Testnet',
+              blockExplorerUrls: ['https://goerli.lineascan.build'],
+              nativeCurrency: { symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['https://rpc.goerli.linea.build'],
             },
           ],
         });
@@ -147,6 +181,29 @@ export default {
       } catch (err) {
         console.error(err);
       }
+    },
+    async getNFT() {
+      const chain = EvmChain.ETHEREUM;
+      this.nfts = await Moralis.EvmApi.nft.getWalletNFTs({
+        address: this.accounts[0],
+        chain,
+      });
+
+      console.log(this.nfts.toJSON());
+    },
+    async getTokens() {
+      const chain = EvmChain.ETHEREUM;
+      this.tokens = await Moralis.EvmApi.token.getWalletTokenBalances({
+        address: this.accounts[0],
+        chain,
+      });
+
+      console.log(this.tokens.toJSON());
+    },
+    formattedBalance(balance) {
+      const divisor = Math.pow(10, 18);
+      const formatted = balance / divisor;
+      return formatted.toFixed(2);
     },
     terminate() {
       this.sdk?.terminate();
